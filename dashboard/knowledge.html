@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지식베이스 관리 - DreamWish</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: Pretendard, system-ui, sans-serif;
+            background: #f3f4f6;
+        }
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            height: 56px;
+            padding: 0 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+        .back-btn {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            color: #374151;
+        }
+        .back-btn:hover {
+            background: #e5e7eb;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-description {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-area:hover {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+        .upload-area.dragover {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .upload-text {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        .upload-hint {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .file-icon {
+            font-size: 24px;
+        }
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .file-size {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        .btn:disabled {
+            background: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #6366f1;
+            transition: width 0.3s;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #6366f1;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .upload-progress {
+            display: none;
+            margin-top: 12px;
+        }
+        .upload-progress.show {
+            display: block;
+        }
+        .progress-fill-zero {
+            width: 0%;
+        }
+        .btn-full-width {
+            width: 100%;
+            margin-top: 16px;
+        }
+        .rebuild-card-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="header">
+            <h1>📚 지식베이스 관리</h1>
+            <a href="index.html" class="back-btn">← 대시보드로 돌아가기</a>
+        </header>
+
+        <div class="container">
+            <!-- 지식베이스 상태 -->
+            <div class="card">
+                <div class="card-title">
+                    📊 지식베이스 현황
+                </div>
+                <div id="kb-alert"></div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-documents">-</div>
+                        <div class="stat-label">총 문서 수</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-chunks">-</div>
+                        <div class="stat-label">총 청크 수</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-last-updated">-</div>
+                        <div class="stat-label">마지막 업데이트</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF 업로드 -->
+            <div class="card">
+                <div class="card-title">
+                    📄 PDF 문서 업로드
+                </div>
+                <div class="card-description">
+                    PDF 파일을 업로드하여 AI 챗봇이 학습할 지식을 추가하세요. 
+                    업로드된 문서는 자동으로 처리되어 벡터 데이터베이스에 저장됩니다.
+                </div>
+
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">PDF 파일을 드래그하거나 클릭하여 선택하세요</div>
+                    <div class="upload-hint">최대 파일 크기: 10MB | 지원 형식: PDF</div>
+                    <input type="file" id="file-input" class="file-input" accept=".pdf" multiple>
+                </div>
+
+                <div id="file-list" class="file-list"></div>
+
+                <div id="upload-progress" class="upload-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-fill-zero" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <button id="upload-btn" class="btn btn-primary btn-full-width" disabled>
+                    업로드 및 처리 시작
+                </button>
+            </div>
+
+            <!-- 지식베이스 재구축 (관리자 전용) -->
+            <div class="card rebuild-card-hidden" id="rebuild-card">
+                <div class="card-title">
+                    🔄 지식베이스 재구축
+                </div>
+                <div class="card-description">
+                    기존 PDF 이미지 폴더의 모든 파일을 다시 처리하여 지식베이스를 재구축합니다.
+                    이 작업은 몇 분 정도 소요될 수 있습니다.
+                </div>
+                <div class="rebuild-section">
+                    <button id="rebuild-btn" class="btn btn-danger btn-full-width">
+                        ⚠️ 지식베이스 재구축 시작
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://api.dreamwish.co.kr";
+        let selectedFiles = [];
+
+        function getToken() {
+            return localStorage.getItem("dw_token");
+        }
+
+        function getRole() {
+            return localStorage.getItem("dw_role");
+        }
+
+        function showAlert(message, type) {
+            const alertEl = document.getElementById('kb-alert');
+            alertEl.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                alertEl.innerHTML = '';
+            }, 5000);
+        }
+
+        // 지식베이스 통계 로드
+        async function loadKBStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/knowledge-base/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                if (res.ok) {
+                    const stats = await res.json();
+                    document.getElementById('stat-documents').textContent = stats.documents || 0;
+                    document.getElementById('stat-chunks').textContent = stats.chunks || 0;
+                    document.getElementById('stat-last-updated').textContent = stats.last_updated || '없음';
+                }
+            } catch (err) {
+                console.error('통계 로드 실패:', err);
+            }
+        }
+
+        // 드래그 앤 드롭
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+            addFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        });
+
+        function addFiles(files) {
+            selectedFiles = [...selectedFiles, ...files];
+            renderFileList();
+            document.getElementById('upload-btn').disabled = selectedFiles.length === 0;
+        }
+
+        function renderFileList() {
+            const fileListEl = document.getElementById('file-list');
+            if (selectedFiles.length === 0) {
+                fileListEl.innerHTML = '';
+                return;
+            }
+
+            fileListEl.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="removeFile(${index})">삭제</button>
+                </div>
+            `).join('');
+        }
+
+        window.removeFile = function(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+            document.getElementById('upload-btn').disabled = selectedFiles.length === 0;
+        };
+
+        // PDF 업로드 및 처리
+        document.getElementById('upload-btn').addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+
+            const uploadBtn = document.getElementById('upload-btn');
+            const progressEl = document.getElementById('upload-progress');
+            const progressFill = document.getElementById('progress-fill');
+
+            uploadBtn.disabled = true;
+            progressEl.classList.add('show');
+            progressFill.classList.remove('progress-fill-zero');
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/knowledge-base/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${getToken()}`
+                        },
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        const progress = ((i + 1) / selectedFiles.length) * 100;
+                        progressFill.style.width = `${progress}%`;
+                    } else {
+                        showAlert(`${file.name} 업로드 실패`, 'error');
+                    }
+                } catch (err) {
+                    showAlert(`${file.name} 업로드 중 오류 발생`, 'error');
+                }
+            }
+
+            showAlert(`${selectedFiles.length}개 파일이 성공적으로 처리되었습니다!`, 'success');
+            selectedFiles = [];
+            renderFileList();
+            uploadBtn.disabled = true;
+            progressEl.classList.remove('show');
+            progressFill.classList.add('progress-fill-zero');
+            loadKBStats();
+        });
+
+        // 지식베이스 재구축 (관리자 전용)
+        if (getRole() === 'admin') {
+            document.getElementById('rebuild-card').classList.remove('rebuild-card-hidden');
+        }
+
+        document.getElementById('rebuild-btn').addEventListener('click', async () => {
+            if (!confirm('정말 지식베이스를 재구축하시겠습니까? 이 작업은 시간이 걸릴 수 있습니다.')) {
+                return;
+            }
+
+            const rebuildBtn = document.getElementById('rebuild-btn');
+            rebuildBtn.disabled = true;
+            rebuildBtn.textContent = '⏳ 재구축 중...';
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/rebuild-knowledge-base`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                if (res.ok) {
+                    showAlert('지식베이스가 성공적으로 재구축되었습니다!', 'success');
+                    loadKBStats();
+                } else {
+                    showAlert('재구축 실패', 'error');
+                }
+            } catch (err) {
+                showAlert('서버 오류가 발생했습니다', 'error');
+            } finally {
+                rebuildBtn.disabled = false;
+                rebuildBtn.textContent = '⚠️ 지식베이스 재구축 시작';
+            }
+        });
+
+        // 페이지 로드 시 통계 로드
+        if (!getToken()) {
+            window.location.href = 'login.html';
+        } else {
+            loadKBStats();
+        }
+    </script>
+</body>
+</html>

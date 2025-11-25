@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>채널 연동 관리 - DreamWish</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .page {
+        min-height: 100vh;
+      }
+      .header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 16px 20px;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .back-btn {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      .back-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+      .container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 30px 20px;
+        overflow-x: auto;
+      }
+      .page-title {
+        text-align: center;
+        color: white;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 40px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+      .channel-grid {
+        display: flex;
+        gap: 24px;
+        width: fit-content;
+        min-width: 100%;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 20px 16px;
+        }
+        .page-title {
+          font-size: 24px;
+          margin-bottom: 24px;
+        }
+        .header h1 {
+          font-size: 20px;
+        }
+        .channel-grid {
+          flex-direction: column;
+          width: 100%;
+        }
+        .channel-card {
+          width: 100% !important;
+          min-width: unset !important;
+        }
+      }
+      .channel-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        transition: transform 0.3s, box-shadow 0.3s;
+        width: 500px;
+        min-width: 500px;
+        flex-shrink: 0;
+      }
+      .channel-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+      }
+      .channel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #f3f4f6;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .channel-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      @media (max-width: 1024px) {
+        .channel-content {
+          grid-template-columns: 1fr;
+        }
+      }
+      .channel-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2937;
+      }
+      .channel-icon {
+        font-size: 32px;
+      }
+      .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .status-connected {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+      }
+      .status-disconnected {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+      }
+      .channel-form {
+        margin-top: 20px;
+      }
+      .form-group {
+        margin-bottom: 18px;
+      }
+      .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .form-label::before {
+        content: "●";
+        color: #667eea;
+        font-size: 8px;
+      }
+      .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 14px;
+        transition: all 0.3s;
+        background: #f9fafb;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      }
+      .form-input::placeholder {
+        color: #9ca3af;
+      }
+      .form-helper {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 6px;
+        line-height: 1.5;
+        padding-left: 4px;
+      }
+      .btn-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 24px;
+      }
+      .btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+      }
+      .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+      }
+      .btn:disabled {
+        background: #e5e7eb;
+        color: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .alert {
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideIn 0.3s ease-out;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .alert-success {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border-left: 4px solid #10b981;
+      }
+      .alert-success::before {
+        content: "✓";
+        font-size: 18px;
+        font-weight: bold;
+      }
+      .alert-error {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        border-left: 4px solid #ef4444;
+      }
+      .alert-error::before {
+        content: "⚠";
+        font-size: 18px;
+      }
+      .webhook-url {
+        font-family: "Courier New", monospace;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        word-break: break-all;
+        margin-top: 8px;
+        border: 2px dashed #d1d5db;
+        color: #374151;
+        font-weight: 600;
+      }
+      .info-icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 16px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div class="header-content">
+          <h1>
+            <span>📡</span>
+            <span>채널 연동 관리</span>
+          </h1>
+          <a href="index.html" class="back-btn">← 대시보드</a>
+        </div>
+      </header>
+
+      <div class="container">
+        <div class="channel-grid">
+          <!-- 카카오톡 채널 -->
+          <div class="channel-card">
+            <div class="channel-header">
+              <div class="channel-title">
+                <span class="channel-icon">💬</span>
+                <span>카카오톡</span>
+              </div>
+              <span id="kakao-status" class="status-badge status-disconnected"
+                >연결 안 됨</span
+              >
+            </div>
+
+            <div id="kakao-alert"></div>
+
+            <form class="channel-form" id="kakao-form">
+              <div class="channel-content">
+                <div class="form-group">
+                  <label class="form-label">REST API 키</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="kakao-app-key"
+                    placeholder="카카오 REST API 키를 입력하세요"
+                  />
+                  <div class="form-helper">
+                    💡 developers.kakao.com > 내 애플리케이션 > 앱 키 > REST API
+                    키 (JavaScript 키 아님!)
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label"
+                    >채널 ID (Channel ID 또는 봇 ID)</label
+                  >
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="kakao-bot-id"
+                    placeholder="_xxxxxx 또는 숫자 형태"
+                  />
+                  <div class="form-helper">
+                    💡 카카오톡 채널 관리자센터 > 관리 > 상세설정에서 확인
+                    (CID가 아닌 Channel ID)
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Webhook URL (자동 생성)</label>
+                <div class="webhook-url">
+                  https://api.dreamwish.co.kr/webhook/kakao
+                </div>
+                <div class="form-helper">
+                  카카오 개발자 센터에 이 URL을 등록하세요
+                </div>
+              </div>
+
+              <div class="btn-group">
+                <button type="submit" class="btn btn-primary">연결하기</button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  id="kakao-disconnect"
+                  disabled
+                >
+                  연결 해제
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- 인스타그램 채널 -->
+          <div class="channel-card">
+            <div class="channel-header">
+              <div class="channel-title">
+                <span class="channel-icon">📷</span>
+                <span>인스타그램</span>
+              </div>
+              <span
+                id="instagram-status"
+                class="status-badge status-disconnected"
+                >연결 안 됨</span
+              >
+            </div>
+
+            <div id="instagram-alert"></div>
+
+            <form class="channel-form" id="instagram-form">
+              <div class="channel-content">
+                <div class="form-group">
+                  <label class="form-label">페이지 액세스 토큰</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="instagram-access-token"
+                    placeholder="Instagram 액세스 토큰"
+                  />
+                  <div class="form-helper">
+                    💡 developers.facebook.com > 도구 > 액세스 토큰 도구 >
+                    페이지 토큰 (Facebook과 동일한 Meta 토큰)
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">인스타그램 계정 ID</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="instagram-account-id"
+                    placeholder="계정 ID"
+                  />
+                  <div class="form-helper">
+                    Instagram 비즈니스 계정을 Facebook 페이지에 연결 후 Graph
+                    API로 조회
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Webhook URL (자동 생성)</label>
+                <div class="webhook-url">
+                  https://api.dreamwish.co.kr/webhook/instagram
+                </div>
+                <div class="form-helper">
+                  Meta 앱 설정에 이 URL을 등록하세요
+                </div>
+              </div>
+
+              <div class="btn-group">
+                <button type="submit" class="btn btn-primary">연결하기</button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  id="instagram-disconnect"
+                  disabled
+                >
+                  연결 해제
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- 페이스북 메신저 채널 -->
+          <div class="channel-card">
+            <div class="channel-header">
+              <div class="channel-title">
+                <span class="channel-icon">📘</span>
+                <span>페이스북 메신저</span>
+              </div>
+              <span
+                id="facebook-status"
+                class="status-badge status-disconnected"
+                >연결 안 됨</span
+              >
+            </div>
+
+            <div id="facebook-alert"></div>
+
+            <form class="channel-form" id="facebook-form">
+              <div class="channel-content">
+                <div class="form-group">
+                  <label class="form-label">페이지 액세스 토큰</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="facebook-access-token"
+                    placeholder="페이지 액세스 토큰"
+                  />
+                  <div class="form-helper">
+                    💡 developers.facebook.com > 도구 > 액세스 토큰 도구 >
+                    페이지 토큰 (Instagram과 동일)
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">페이지 ID</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="facebook-page-id"
+                    placeholder="페이지 ID"
+                  />
+                  <div class="form-helper">
+                    Facebook 페이지 설정에서 확인 또는 Graph API로 조회
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Webhook URL (자동 생성)</label>
+                <div class="webhook-url">
+                  https://api.dreamwish.co.kr/webhook/facebook
+                </div>
+                <div class="form-helper">
+                  Meta 앱 설정에 이 URL을 등록하세요
+                </div>
+              </div>
+
+              <div class="btn-group">
+                <button type="submit" class="btn btn-primary">연결하기</button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  id="facebook-disconnect"
+                  disabled
+                >
+                  연결 해제
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- 이메일 채널 -->
+          <div class="channel-card">
+            <div class="channel-header">
+              <div class="channel-title">
+                <span class="channel-icon">📧</span>
+                <span>이메일</span>
+              </div>
+              <span id="email-status" class="status-badge status-disconnected"
+                >연결 안 됨</span
+              >
+            </div>
+
+            <div id="email-alert"></div>
+
+            <form class="channel-form" id="email-form">
+              <div class="channel-content">
+                <div class="form-group">
+                  <label class="form-label">SMTP 서버</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="email-smtp-host"
+                    placeholder="smtp.gmail.com"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">SMTP 포트</label>
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="email-smtp-port"
+                    placeholder="587"
+                    value="587"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">이메일 주소</label>
+                  <input
+                    type="email"
+                    class="form-input"
+                    id="email-address"
+                    placeholder="support@dreamwish.com"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">비밀번호</label>
+                  <input
+                    type="password"
+                    class="form-input"
+                    id="email-password"
+                    placeholder="앱 비밀번호"
+                  />
+                  <div class="form-helper">
+                    Gmail의 경우 앱 비밀번호 사용 권장
+                  </div>
+                </div>
+              </div>
+
+              <div class="btn-group">
+                <button type="submit" class="btn btn-primary">연결하기</button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  id="email-disconnect"
+                  disabled
+                >
+                  연결 해제
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "https://api.dreamwish.co.kr";
+      const channelIds = {};
+
+      function getToken() {
+        return localStorage.getItem("dw_token");
+      }
+
+      function showAlert(elementId, message, type) {
+        const alertEl = document.getElementById(elementId);
+        alertEl.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        setTimeout(() => {
+          alertEl.innerHTML = "";
+        }, 5000);
+      }
+
+      // 저장된 채널 설정 로드
+      async function loadChannels() {
+        const token = getToken();
+        if (!token) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        try {
+          const res = await fetch(`${API_BASE}/api/channels/`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (res.ok) {
+            const channels = await res.json();
+            channels.forEach((channel) => {
+              // 채널 ID 매핑 저장
+              if (channel && channel.channel_type && channel.id !== undefined) {
+                channelIds[channel.channel_type] = channel.id;
+              }
+              updateChannelStatus(channel.channel_type, channel.is_active);
+            });
+          }
+        } catch (err) {
+          console.error("채널 로드 실패:", err);
+        }
+      }
+
+      function updateChannelStatus(channelType, isActive) {
+        const statusEl = document.getElementById(`${channelType}-status`);
+        const disconnectBtn = document.getElementById(
+          `${channelType}-disconnect`
+        );
+
+        if (isActive) {
+          statusEl.className = "status-badge status-connected";
+          statusEl.textContent = "연결됨";
+          disconnectBtn.disabled = false;
+        } else {
+          statusEl.className = "status-badge status-disconnected";
+          statusEl.textContent = "연결 안 됨";
+          disconnectBtn.disabled = true;
+        }
+      }
+
+      // 카카오톡 연결
+      document
+        .getElementById("kakao-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const appKey = document.getElementById("kakao-app-key").value;
+          const botId = document.getElementById("kakao-bot-id").value;
+
+          if (!appKey || !botId) {
+            showAlert("kakao-alert", "모든 필드를 입력해주세요", "error");
+            return;
+          }
+
+          try {
+            const res = await fetch(`${API_BASE}/api/channels/connect`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+              },
+              body: JSON.stringify({
+                channel_type: "kakao",
+                credentials: {
+                  app_key: appKey,
+                  bot_id: botId,
+                },
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              showAlert(
+                "kakao-alert",
+                "카카오톡 채널이 성공적으로 연결되었습니다!",
+                "success"
+              );
+              updateChannelStatus("kakao", true);
+              if (data && data.channel_id !== undefined) {
+                channelIds["kakao"] = data.channel_id;
+              }
+            } else {
+              const error = await res.json();
+              showAlert("kakao-alert", error.detail || "연결 실패", "error");
+            }
+          } catch (err) {
+            showAlert("kakao-alert", "서버 오류가 발생했습니다", "error");
+          }
+        });
+
+      // 인스타그램 연결
+      document
+        .getElementById("instagram-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const accessToken = document.getElementById(
+            "instagram-access-token"
+          ).value;
+          const accountId = document.getElementById(
+            "instagram-account-id"
+          ).value;
+
+          if (!accessToken || !accountId) {
+            showAlert("instagram-alert", "모든 필드를 입력해주세요", "error");
+            return;
+          }
+
+          try {
+            const res = await fetch(`${API_BASE}/api/channels/connect`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+              },
+              body: JSON.stringify({
+                channel_type: "instagram",
+                credentials: {
+                  access_token: accessToken,
+                  account_id: accountId,
+                },
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              showAlert(
+                "instagram-alert",
+                "인스타그램 채널이 성공적으로 연결되었습니다!",
+                "success"
+              );
+              updateChannelStatus("instagram", true);
+              if (data && data.channel_id !== undefined) {
+                channelIds["instagram"] = data.channel_id;
+              }
+            } else {
+              const error = await res.json();
+              showAlert(
+                "instagram-alert",
+                error.detail || "연결 실패",
+                "error"
+              );
+            }
+          } catch (err) {
+            showAlert("instagram-alert", "서버 오류가 발생했습니다", "error");
+          }
+        });
+
+      // 페이스북 연결
+      document
+        .getElementById("facebook-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const accessToken = document.getElementById(
+            "facebook-access-token"
+          ).value;
+          const pageId = document.getElementById("facebook-page-id").value;
+
+          if (!accessToken || !pageId) {
+            showAlert("facebook-alert", "모든 필드를 입력해주세요", "error");
+            return;
+          }
+
+          try {
+            const res = await fetch(`${API_BASE}/api/channels/connect`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+              },
+              body: JSON.stringify({
+                channel_type: "facebook",
+                credentials: {
+                  access_token: accessToken,
+                  page_id: pageId,
+                },
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              showAlert(
+                "facebook-alert",
+                "페이스북 채널이 성공적으로 연결되었습니다!",
+                "success"
+              );
+              updateChannelStatus("facebook", true);
+              if (data && data.channel_id !== undefined) {
+                channelIds["facebook"] = data.channel_id;
+              }
+            } else {
+              const error = await res.json();
+              showAlert("facebook-alert", error.detail || "연결 실패", "error");
+            }
+          } catch (err) {
+            showAlert("facebook-alert", "서버 오류가 발생했습니다", "error");
+          }
+        });
+
+      // 이메일 연결
+      document
+        .getElementById("email-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const smtpHost = document.getElementById("email-smtp-host").value;
+          const smtpPort = document.getElementById("email-smtp-port").value;
+          const emailAddress = document.getElementById("email-address").value;
+          const password = document.getElementById("email-password").value;
+
+          if (!smtpHost || !smtpPort || !emailAddress || !password) {
+            showAlert("email-alert", "모든 필드를 입력해주세요", "error");
+            return;
+          }
+
+          try {
+            const res = await fetch(`${API_BASE}/api/channels/connect`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+              },
+              body: JSON.stringify({
+                channel_type: "email",
+                credentials: {
+                  smtp_host: smtpHost,
+                  smtp_port: parseInt(smtpPort),
+                  email: emailAddress,
+                  password: password,
+                },
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              showAlert(
+                "email-alert",
+                "이메일 채널이 성공적으로 연결되었습니다!",
+                "success"
+              );
+              updateChannelStatus("email", true);
+              if (data && data.channel_id !== undefined) {
+                channelIds["email"] = data.channel_id;
+              }
+            } else {
+              const error = await res.json();
+              showAlert("email-alert", error.detail || "연결 실패", "error");
+            }
+          } catch (err) {
+            showAlert("email-alert", "서버 오류가 발생했습니다", "error");
+          }
+        });
+
+      // 채널 연결 해제 공통 처리
+      async function disconnectChannel(channelType) {
+        const token = getToken();
+        if (!token) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        const btn = document.getElementById(`${channelType}-disconnect`);
+        const alertId = `${channelType}-alert`;
+        const channelId = channelIds[channelType];
+        if (channelId === undefined) {
+          showAlert(alertId, "연결된 채널을 찾을 수 없습니다", "error");
+          return;
+        }
+
+        try {
+          if (btn) btn.disabled = true;
+
+          const res = await fetch(`${API_BASE}/api/channels/${channelId}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (res.ok) {
+            showAlert(alertId, "채널 연결이 해제되었습니다.", "success");
+            updateChannelStatus(channelType, false);
+          } else {
+            const error = await res.json();
+            showAlert(
+              alertId,
+              error.detail || "연결 해제 실패",
+              "error"
+            );
+          }
+        } catch (err) {
+          showAlert(alertId, "서버 오류가 발생했습니다", "error");
+        } finally {
+          // 해제 후에는 버튼 비활성화 유지
+          if (btn) btn.disabled = true;
+        }
+      }
+
+      // 해제 버튼 이벤트 바인딩
+      ["kakao", "instagram", "facebook", "email"].forEach((ct) => {
+        const btn = document.getElementById(`${ct}-disconnect`);
+        if (btn) {
+          btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            await disconnectChannel(ct);
+          });
+        }
+      });
+
+      // 페이지 로드 시 채널 상태 로드
+      loadChannels();
+    </script>
+  </body>
+</html>

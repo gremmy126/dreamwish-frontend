@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팀원 회원가입 - DreamWish 상담 대시보드</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 480px;
+            width: 100%;
+            padding: 40px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input:disabled {
+            background: #f0f0f0;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        .loading-text {
+            margin-top: 10px;
+            color: #666;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: #dc3545;
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: #ffc107;
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: #28a745;
+        }
+
+        .password-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="logo">
+            <h1>🏢 DreamWish</h1>
+            <p>팀원 회원가입</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="loading-spinner" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">초대 코드 확인 중...</p>
+        </div>
+
+        <form id="register-form" class="hidden">
+            <div class="form-group">
+                <label for="email">이메일 주소 *</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    disabled
+                    placeholder="초대된 이메일 주소"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="name">이름 *</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    required 
+                    placeholder="홍길동"
+                    autocomplete="name"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">비밀번호 * (최소 8자)</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    minlength="8"
+                    placeholder="비밀번호 입력"
+                    autocomplete="new-password"
+                >
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="password-strength-bar"></div>
+                </div>
+                <div class="password-hint" id="password-hint">
+                    비밀번호는 최소 8자 이상이어야 합니다.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password-confirm">비밀번호 확인 *</label>
+                <input 
+                    type="password" 
+                    id="password-confirm" 
+                    name="password-confirm" 
+                    required 
+                    minlength="8"
+                    placeholder="비밀번호 다시 입력"
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">
+                회원가입하기
+            </button>
+        </form>
+
+        <div class="login-link">
+            이미 계정이 있으신가요? <a href="login.html">로그인</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://api.dreamwish.co.kr';
+        let inviteCode = '';
+        let inviteEmail = '';
+
+        // URL에서 초대 코드 추출
+        function getInviteCodeFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('invite');
+        }
+
+        // 알림 표시
+        function showAlert(message, type = 'error') {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            // 3초 후 자동 제거 (success/info 타입만)
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // 비밀번호 강도 체크
+        function checkPasswordStrength(password) {
+            const strengthBar = document.getElementById('password-strength-bar');
+            const hint = document.getElementById('password-hint');
+            
+            if (password.length === 0) {
+                strengthBar.className = 'password-strength-bar';
+                hint.textContent = '비밀번호는 최소 8자 이상이어야 합니다.';
+                return;
+            }
+            
+            if (password.length < 8) {
+                strengthBar.className = 'password-strength-bar weak';
+                hint.textContent = '너무 짧습니다. 최소 8자 이상 입력하세요.';
+                hint.style.color = '#dc3545';
+                return;
+            }
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            
+            if (strength <= 2) {
+                strengthBar.className = 'password-strength-bar weak';
+                hint.textContent = '약한 비밀번호입니다. 숫자와 특수문자를 포함하세요.';
+                hint.style.color = '#dc3545';
+            } else if (strength <= 4) {
+                strengthBar.className = 'password-strength-bar medium';
+                hint.textContent = '적절한 비밀번호입니다.';
+                hint.style.color = '#ffc107';
+            } else {
+                strengthBar.className = 'password-strength-bar strong';
+                hint.textContent = '강력한 비밀번호입니다!';
+                hint.style.color = '#28a745';
+            }
+        }
+
+        // 초대 코드 검증
+        async function checkInviteCode(code) {
+            try {
+                const response = await fetch(`${API_BASE}/auth/check-invite?code=${code}`);
+                const data = await response.json();
+                
+                if (data.valid) {
+                    inviteEmail = data.email;
+                    document.getElementById('email').value = inviteEmail;
+                    document.getElementById('loading').classList.remove('active');
+                    document.getElementById('register-form').classList.remove('hidden');
+                    showAlert('유효한 초대 링크입니다. 회원가입을 진행해주세요.', 'success');
+                } else {
+                    document.getElementById('loading').classList.remove('active');
+                    showAlert(data.message || '유효하지 않은 초대 링크입니다.', 'error');
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('active');
+                showAlert('초대 코드 확인 중 오류가 발생했습니다.', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        // 회원가입 처리
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value.trim();
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password-confirm').value;
+            
+            // 검증
+            if (!name) {
+                showAlert('이름을 입력해주세요.', 'error');
+                return;
+            }
+            
+            if (password.length < 8) {
+                showAlert('비밀번호는 최소 8자 이상이어야 합니다.', 'error');
+                return;
+            }
+            
+            if (password !== passwordConfirm) {
+                showAlert('비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '가입 처리 중...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        invite_code: inviteCode,
+                        email: inviteEmail,
+                        name: name,
+                        password: password,
+                        password_confirm: passwordConfirm
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // 토큰 저장 (자동 로그인)
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_email', data.email);
+                    localStorage.setItem('user_role', data.role);
+                    
+                    showAlert('회원가입이 완료되었습니다! 대시보드로 이동합니다...', 'success');
+                    
+                    // 2초 후 대시보드로 이동
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    showAlert(data.detail || '회원가입에 실패했습니다.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '회원가입하기';
+                }
+            } catch (error) {
+                showAlert('서버 연결에 실패했습니다.', 'error');
+                console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.textContent = '회원가입하기';
+            }
+        }
+
+        // 페이지 로드 시 초대 코드 확인
+        document.addEventListener('DOMContentLoaded', () => {
+            inviteCode = getInviteCodeFromURL();
+            
+            if (!inviteCode) {
+                document.getElementById('loading').classList.remove('active');
+                showAlert('유효하지 않은 접근입니다. 초대 링크를 통해 접속해주세요.', 'error');
+                return;
+            }
+            
+            document.getElementById('loading').classList.add('active');
+            checkInviteCode(inviteCode);
+            
+            // 비밀번호 입력 이벤트
+            document.getElementById('password').addEventListener('input', (e) => {
+                checkPasswordStrength(e.target.value);
+            });
+            
+            // 폼 제출 이벤트
+            document.getElementById('register-form').addEventListener('submit', handleRegister);
+        });
+    </script>
+</body>
+</html>
