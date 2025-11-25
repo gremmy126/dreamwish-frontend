@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dreamwish 상담 인박스</title>
+    <!-- 대시보드 스타일 -->
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* 최소한의 레이아웃 (원하면 style.css 로 옮겨도 됨) */
+      body {
+        margin: 0;
+        font-family: Pretendard, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: #f3f4f6;
+      }
+      .page {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .header {
+        height: 56px;
+        padding: 0 16px;
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .header-left {
+        display: flex;
+        flex-direction: column;
+      }
+      .header-name {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .header-role {
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .logout-btn {
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        background: #f9fafb;
+      }
+      .header-buttons {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        position: relative;
+      }
+      .notification-btn {
+        position: relative;
+      }
+      .notification-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #ef4444;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 18px;
+        text-align: center;
+      }
+      .notification-panel {
+        position: absolute;
+        top: 60px;
+        right: 16px;
+        width: 400px;
+        max-height: 500px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+      }
+      .notification-header {
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .notification-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .clear-btn {
+        padding: 6px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: white;
+        font-size: 12px;
+        cursor: pointer;
+        color: #6b7280;
+      }
+      .clear-btn:hover {
+        background: #f9fafb;
+        color: #ef4444;
+      }
+      .notification-list {
+        overflow-y: auto;
+        max-height: 420px;
+      }
+      .notification-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .notification-item:hover {
+        background: #f9fafb;
+      }
+      .notification-item.unread {
+        background: #eff6ff;
+      }
+      .notification-item.unread:hover {
+        background: #dbeafe;
+      }
+      .notification-title {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 4px;
+        color: #111827;
+      }
+      .notification-body {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 4px;
+      }
+      .notification-time {
+        font-size: 11px;
+        color: #9ca3af;
+      }
+      .notification-empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 13px;
+      }
+      .hidden {
+        display: none !important;
+      }
+
+      /* 채널 탭 */
+      .channel-tabs {
+        display: flex;
+        gap: 4px;
+        padding: 8px 16px;
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .tab-btn {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .tab-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+      }
+      .tab-btn.active {
+        background: #eef2ff;
+        color: #4f46e5;
+        font-weight: 600;
+      }
+
+      .main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 300px 1fr 280px;
+        min-height: 0;
+      }
+      .sidebar {
+        border-right: 1px solid #e5e7eb;
+        background: #ffffff;
+        padding: 12px;
+        overflow-y: auto;
+      }
+      .sidebar-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      /* 대화방 아이템 */
+      .conversation-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 4px;
+        gap: 8px;
+      }
+      .conversation-item:hover {
+        background: #eef2ff;
+      }
+      .conversation-item.active {
+        background: #e0e7ff;
+      }
+      .conversation-content {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .conversation-title {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .conversation-sub {
+        font-size: 11px;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .delete-conversation-btn {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        background: transparent;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        color: #9ca3af;
+        opacity: 0;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+      .conversation-item:hover .delete-conversation-btn {
+        opacity: 1;
+      }
+      .delete-conversation-btn:hover {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #ef4444;
+      }
+      .conversation-item.active .delete-conversation-btn {
+        border-color: #a5b4fc;
+        color: #6366f1;
+        opacity: 1;
+      }
+      .conversation-item.active .delete-conversation-btn:hover {
+        background: #dbeafe;
+        border-color: #60a5fa;
+        color: #3b82f6;
+      }
+
+      .chat-list-empty {
+        font-size: 12px;
+        color: #9ca3af;
+      }
+      .chat-area {
+        display: flex;
+        flex-direction: column;
+        background: #f9fafb;
+      }
+      .messages {
+        flex: 1;
+        padding: 12px 16px;
+        overflow-y: auto;
+      }
+      .message-row {
+        display: flex;
+        margin-bottom: 8px;
+      }
+      .message-row.agent {
+        justify-content: flex-end;
+      }
+      .message-bubble {
+        max-width: 70%;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .message-row.customer .message-bubble {
+        background: #e5e7eb;
+        border-bottom-left-radius: 2px;
+      }
+      .message-row.agent .message-bubble {
+        background: #6366f1;
+        color: #ffffff;
+        border-bottom-right-radius: 2px;
+      }
+      .input-area {
+        padding: 8px 12px;
+        border-top: 1px solid #e5e7eb;
+        background: #ffffff;
+        display: flex;
+        gap: 8px;
+      }
+      .input-area textarea {
+        flex: 1;
+        resize: none;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        padding: 8px;
+        font-size: 13px;
+        height: 60px;
+        box-sizing: border-box;
+      }
+      .input-area button {
+        width: 80px;
+        border: none;
+        border-radius: 8px;
+        background: #6366f1;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      /* 고객 정보 패널 */
+      .customer-panel {
+        border-left: 1px solid #e5e7eb;
+        background: #ffffff;
+        padding: 16px;
+        overflow-y: auto;
+        display: none; /* 기본 숨김, 대화방 선택 시 표시 */
+      }
+      .customer-panel.show {
+        display: block;
+      }
+      .customer-header {
+        text-align: center;
+        margin-bottom: 16px;
+      }
+      .customer-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        margin: 0 auto 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: #6b7280;
+      }
+      .customer-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .customer-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .customer-platform {
+        font-size: 12px;
+        color: #6b7280;
+        padding: 2px 8px;
+        background: #f3f4f6;
+        border-radius: 4px;
+        display: inline-block;
+      }
+      .customer-section {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
+      }
+      .customer-section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 8px;
+      }
+      .customer-field {
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+      .customer-field-label {
+        color: #6b7280;
+        margin-right: 4px;
+      }
+      .customer-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .customer-tag {
+        padding: 2px 8px;
+        background: #dbeafe;
+        color: #1e40af;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+      .customer-memo {
+        width: 100%;
+        min-height: 60px;
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 12px;
+        resize: vertical;
+      }
+      .save-btn {
+        width: 100%;
+        padding: 8px;
+        background: #6366f1;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+      .save-btn:hover {
+        background: #4f46e5;
+      }
+      .conversation-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .action-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .connect-btn {
+        background: #10b981;
+        color: white;
+      }
+      .connect-btn:hover {
+        background: #059669;
+      }
+      .connect-btn:disabled {
+        background: #d1d5db;
+        cursor: not-allowed;
+      }
+      .end-btn {
+        background: #ef4444;
+        color: white;
+      }
+      .end-btn:hover {
+        background: #dc2626;
+      }
+      .end-btn:disabled {
+        background: #d1d5db;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <!-- 상단 헤더 -->
+      <header class="header">
+        <div class="header-left">
+          <span id="agent-name" class="header-name">로딩중...</span>
+          <span id="agent-role" class="header-role">-</span>
+        </div>
+        <div class="header-buttons">
+          <button class="logout-btn notification-btn" id="notification-btn">
+            🔔 알림
+            <span id="notification-count" class="notification-badge hidden"
+              >0</span
+            >
+          </button>
+          <button
+            class="logout-btn"
+            onclick="window.location.href='ai-chat.html'"
+          >
+            🤖 AI 채팅
+          </button>
+          <button
+            class="logout-btn"
+            onclick="window.location.href='knowledge.html'"
+          >
+            📚 지식베이스
+          </button>
+          <button
+            class="logout-btn"
+            onclick="window.location.href='channels.html'"
+          >
+            📡 채널 연동
+          </button>
+          <button
+            class="logout-btn"
+            onclick="window.location.href='team-chat.html'"
+          >
+            💬 팀 채팅
+          </button>
+          <button
+            id="invite-btn"
+            class="logout-btn"
+            onclick="window.location.href='invite.html'"
+          >
+            ✉️ 팀원 초대
+          </button>
+          <button
+            id="team-btn"
+            class="logout-btn"
+            onclick="window.location.href='team.html'"
+          >
+            👥 팀원 관리
+          </button>
+          <button id="logout-btn" class="logout-btn">로그아웃</button>
+        </div>
+      </header>
+
+      <!-- 알림 패널 -->
+      <div id="notification-panel" class="notification-panel hidden">
+        <div class="notification-header">
+          <h3>🔔 알림 내역</h3>
+          <button id="clear-notifications" class="clear-btn">전체 삭제</button>
+        </div>
+        <div id="notification-list" class="notification-list">
+          <div class="notification-empty">표시할 알림이 없습니다.</div>
+        </div>
+      </div>
+
+      <!-- 채널 선택 탭 -->
+      <div class="channel-tabs">
+        <button class="tab-btn active" data-channel="all">📨 전체</button>
+        <button class="tab-btn" data-channel="widget">🌐 웹 위젯</button>
+        <button class="tab-btn" data-channel="kakao">💬 카카오톡</button>
+        <button class="tab-btn" data-channel="instagram">📷 인스타그램</button>
+        <button class="tab-btn" data-channel="facebook">📘 페이스북</button>
+      </div>
+
+      <!-- 메인 영역: 좌측 대화방 목록 / 우측 메시지 -->
+      <div class="main">
+        <!-- 좌측: 대화방 목록 (추후 Conversation API 붙일 자리) -->
+        <aside class="sidebar">
+          <div class="sidebar-title">대화방</div>
+          <div id="conversation-list">
+            <div class="chat-list-empty">아직 대화방이 없습니다.</div>
+          </div>
+        </aside>
+
+        <!-- 우측: 채팅 영역 -->
+        <section class="chat-area">
+          <div id="chat-messages" class="messages">
+            <!-- 메시지들이 여기에 JS로 추가됨 -->
+          </div>
+          <div class="input-area">
+            <textarea
+              id="chat-input"
+              placeholder="메시지를 입력하고 Enter 또는 전송 버튼을 눌러주세요."
+            ></textarea>
+            <button id="chat-send-btn">전송</button>
+          </div>
+        </section>
+
+        <!-- 고객 정보 패널 -->
+        <aside id="customer-panel" class="customer-panel">
+          <div class="customer-header">
+            <div class="conversation-actions">
+              <button
+                id="connect-conversation-btn"
+                class="action-btn connect-btn"
+              >
+                🟢 상담 연결
+              </button>
+              <button id="end-conversation-btn" class="action-btn end-btn">
+                ⭕ 상담 종료
+              </button>
+            </div>
+            <div class="customer-avatar" id="customer-avatar">👤</div>
+            <div class="customer-name" id="customer-name">고객 선택</div>
+            <span class="customer-platform" id="customer-platform">-</span>
+          </div>
+
+          <div class="customer-section">
+            <div class="customer-section-title">기본 정보</div>
+            <div class="customer-field">
+              <span class="customer-field-label">고객 ID:</span>
+              <span id="customer-external-id">-</span>
+            </div>
+            <div class="customer-field">
+              <span class="customer-field-label">전화번호:</span>
+              <span id="customer-phone">-</span>
+            </div>
+            <div class="customer-field">
+              <span class="customer-field-label">성별:</span>
+              <span id="customer-gender">-</span>
+            </div>
+            <div class="customer-field">
+              <span class="customer-field-label">연령대:</span>
+              <span id="customer-age">-</span>
+            </div>
+          </div>
+
+          <div class="customer-section">
+            <div class="customer-section-title">태그</div>
+            <div class="customer-tags" id="customer-tags">
+              <!-- 태그들이 여기에 동적으로 추가됨 -->
+            </div>
+          </div>
+
+          <div class="customer-section">
+            <div class="customer-section-title">상담 메모</div>
+            <textarea
+              id="customer-memo"
+              class="customer-memo"
+              placeholder="고객에 대한 메모를 입력하세요..."
+            ></textarea>
+            <button id="save-memo-btn" class="save-btn">메모 저장</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- 대시보드 JS -->
+    <script src="app.js?v=20250124-001"></script>
+  </body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>팀 채팅 - DreamWish</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Pretendard, system-ui, sans-serif;
+        background: #f3f4f6;
+        overflow: hidden;
+      }
+      .page {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .header {
+        height: 56px;
+        padding: 0 16px;
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+      .header h1 {
+        font-size: 18px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .back-btn {
+        padding: 8px 16px;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        color: #374151;
+      }
+      .back-btn:hover {
+        background: #e5e7eb;
+      }
+      .chat-container {
+        display: flex;
+        height: calc(100vh - 56px);
+        overflow: hidden;
+      }
+
+      /* 사이드바 */
+      .sidebar {
+        width: 280px;
+        background: white;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+      .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .sidebar-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 12px;
+      }
+      .user-list {
+        flex: 1;
+        overflow-y: auto;
+      }
+      .user-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.2s;
+      }
+      .user-item:hover {
+        background: #f9fafb;
+      }
+      .user-item.active {
+        background: #eff6ff;
+        border-left: 3px solid #3b82f6;
+      }
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .user-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .user-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #111827;
+        margin-bottom: 2px;
+      }
+      .user-status {
+        font-size: 12px;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+      }
+      .status-dot.offline {
+        background: #9ca3af;
+      }
+
+      /* 채팅 영역 */
+      .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: white;
+      }
+      .chat-header {
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .message {
+        display: flex;
+        gap: 12px;
+        max-width: 70%;
+      }
+      .message.own {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+      }
+      .message-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .message-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .message-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .message-sender {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+      }
+      .message-time {
+        font-size: 11px;
+        color: #9ca3af;
+      }
+      .message-bubble {
+        background: #f3f4f6;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #1f2937;
+      }
+      .message.own .message-bubble {
+        background: #3b82f6;
+        color: white;
+      }
+
+      /* 입력 영역 */
+      .chat-input {
+        padding: 16px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+      }
+      .input-wrapper {
+        flex: 1;
+        position: relative;
+      }
+      .message-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 24px;
+        font-size: 14px;
+        resize: none;
+        max-height: 120px;
+        font-family: inherit;
+      }
+      .message-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+      }
+      .send-btn {
+        padding: 12px 24px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 24px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+      .send-btn:hover {
+        background: #2563eb;
+      }
+      .send-btn:disabled {
+        background: #e5e7eb;
+        color: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      /* 빈 상태 */
+      .empty-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        gap: 12px;
+      }
+      .empty-icon {
+        font-size: 64px;
+        opacity: 0.5;
+      }
+      .empty-text {
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      /* 모바일 반응형 */
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          left: 0;
+          top: 56px;
+          height: calc(100vh - 56px);
+          z-index: 100;
+          transform: translateX(-100%);
+          transition: transform 0.3s;
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .chat-main {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <h1>
+          <span>👥</span>
+          <span>팀 채팅</span>
+        </h1>
+        <a href="index.html" class="back-btn">← 대시보드</a>
+      </header>
+
+      <div class="chat-container">
+        <!-- 사이드바 -->
+        <div class="sidebar" id="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">팀원 목록</div>
+          </div>
+          <div class="user-list" id="userList">
+            <!-- 팀원 목록이 여기에 동적으로 추가됨 -->
+          </div>
+        </div>
+
+        <!-- 채팅 메인 -->
+        <div class="chat-main">
+          <div id="chatArea">
+            <div class="empty-state">
+              <div class="empty-icon">💬</div>
+              <div class="empty-text">대화할 팀원을 선택하세요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "https://api.dreamwish.co.kr";
+      let currentUser = null;
+      let selectedUser = null;
+      let ws = null;
+
+      function getToken() {
+        return localStorage.getItem("dw_token");
+      }
+
+      async function loadCurrentUser() {
+        const token = getToken();
+        if (!token) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            currentUser = await res.json();
+            loadTeamMembers();
+            connectWebSocket();
+          }
+        } catch (err) {
+          console.error("사용자 정보 로드 실패:", err);
+        }
+      }
+
+      async function loadTeamMembers() {
+        try {
+          const res = await fetch(`${API_BASE}/api/users`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+
+          if (res.ok) {
+            const members = await res.json();
+            renderUserList(members);
+          }
+        } catch (err) {
+          console.error("팀원 목록 로드 실패:", err);
+          renderUserList([
+            { id: 1, name: "김철수", email: "kim@example.com", online: true },
+            { id: 2, name: "이영희", email: "lee@example.com", online: true },
+            { id: 3, name: "박민수", email: "park@example.com", online: false },
+          ]);
+        }
+      }
+
+      function renderUserList(members) {
+        const userList = document.getElementById("userList");
+        userList.innerHTML = members
+          .filter((m) => m.id !== currentUser?.id)
+          .map(
+            (user) => `
+        <div class="user-item" data-user-id="${user.id}" onclick="selectUser(${
+              user.id
+            })">
+          <div class="user-avatar">${user.name[0]}</div>
+          <div class="user-info">
+            <div class="user-name">${user.name}</div>
+            <div class="user-status">
+              <span class="status-dot ${user.online ? "" : "offline"}"></span>
+              <span>${user.online ? "온라인" : "오프라인"}</span>
+            </div>
+          </div>
+        </div>
+      `
+          )
+          .join("");
+      }
+
+      function selectUser(userId) {
+        selectedUser = userId;
+
+        document.querySelectorAll(".user-item").forEach((item) => {
+          item.classList.remove("active");
+        });
+        document
+          .querySelector(`[data-user-id="${userId}"]`)
+          ?.classList.add("active");
+
+        renderChatArea();
+        loadMessages(userId);
+      }
+
+      function renderChatArea() {
+        const chatArea = document.getElementById("chatArea");
+        const user = Array.from(document.querySelectorAll(".user-item")).find(
+          (item) => item.dataset.userId == selectedUser
+        );
+
+        if (!user) return;
+
+        const userName = user.querySelector(".user-name").textContent;
+
+        chatArea.innerHTML = `
+      <div class="chat-header">
+        <div class="user-avatar">${userName[0]}</div>
+        <div class="user-info">
+          <div class="user-name">${userName}</div>
+          <div class="chat-header-meta">
+            <span class="user-status">
+              <span class="status-dot"></span>
+              <span>온라인</span>
+            </span>
+            <span class="chat-tag">1:1 팀 채팅</span>
+          </div>
+        </div>
+      </div>
+      <div class="chat-messages" id="messages"></div>
+      <div class="chat-input">
+        <div class="input-wrapper">
+          <textarea
+            class="message-input"
+            id="messageInput"
+            placeholder="메시지를 입력하고 Enter로 전송하세요. 줄바꿈은 Shift+Enter"
+            rows="1"
+          ></textarea>
+        </div>
+        <button class="send-btn" onclick="sendMessage()">전송</button>
+      </div>
+    `;
+
+        const input = document.getElementById("messageInput");
+
+        input.addEventListener("input", function () {
+          this.style.height = "auto";
+          this.style.height = Math.min(this.scrollHeight, 120) + "px";
+        });
+
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+      }
+
+      async function loadMessages(userId) {
+        try {
+          const res = await fetch(`${API_BASE}/api/chat/messages/${userId}`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+
+          if (res.ok) {
+            const messages = await res.json();
+            renderMessages(messages);
+          }
+        } catch (err) {
+          console.error("메시지 로드 실패:", err);
+          renderMessages([
+            {
+              id: 1,
+              sender_id: userId,
+              sender_name: "팀원",
+              content: "안녕하세요!",
+              created_at: new Date().toISOString(),
+            },
+            {
+              id: 2,
+              sender_id: currentUser?.id,
+              sender_name: "나",
+              content: "네, 안녕하세요!",
+              created_at: new Date().toISOString(),
+            },
+          ]);
+        }
+      }
+
+      function renderMessages(messages) {
+        const messagesContainer = document.getElementById("messages");
+        if (!messagesContainer) return;
+
+        messagesContainer.innerHTML = messages
+          .map((msg) => {
+            const isOwn = msg.sender_id === currentUser?.id;
+            const time = new Date(msg.created_at).toLocaleTimeString("ko-KR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+            return `
+        <div class="message ${isOwn ? "own" : ""}">
+          <div class="message-avatar">${msg.sender_name[0]}</div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-sender">${msg.sender_name}</span>
+              <span class="message-time">${time}</span>
+            </div>
+            <div class="message-bubble">${msg.content}</div>
+          </div>
+        </div>
+      `;
+          })
+          .join("");
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      async function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const content = input.value.trim();
+
+        if (!content || !selectedUser) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/chat/send`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getToken()}`,
+            },
+            body: JSON.stringify({
+              recipient_id: selectedUser,
+              content: content,
+            }),
+          });
+
+          if (res.ok) {
+            input.value = "";
+            input.style.height = "auto";
+            loadMessages(selectedUser);
+          }
+        } catch (err) {
+          console.error("메시지 전송 실패:", err);
+          addLocalMessage(content);
+          input.value = "";
+          input.style.height = "auto";
+        }
+      }
+
+      function addLocalMessage(content) {
+        const messagesContainer = document.getElementById("messages");
+        if (!messagesContainer) return;
+
+        const time = new Date().toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const messageHTML = `
+      <div class="message own">
+        <div class="message-avatar">${currentUser?.name?.[0] || "U"}</div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-sender">나</span>
+            <span class="message-time">${time}</span>
+          </div>
+          <div class="message-bubble">${content}</div>
+        </div>
+      </div>
+    `;
+
+        messagesContainer.insertAdjacentHTML("beforeend", messageHTML);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      function connectWebSocket() {
+        try {
+          ws = new WebSocket(`wss://api.dreamwish.co.kr/ws/chat`);
+
+          ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.sender_id === selectedUser) {
+              loadMessages(selectedUser);
+            }
+          };
+
+          ws.onerror = () => {
+            console.log("WebSocket 연결 실패 (백엔드 구현 필요)");
+          };
+        } catch (err) {
+          console.log("WebSocket 초기화 실패");
+        }
+      }
+
+      loadCurrentUser();
+    </script>
+  </body>
+</html>
