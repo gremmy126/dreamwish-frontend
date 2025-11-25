@@ -1,6 +1,6 @@
 // frontend/dashboard/app.js
 
-const API_BASE = "http://localhost:8000"; // FastAPI 서버 주소
+const API_BASE = "https://api.dreamwish.co.kr"; // FastAPI 서버 주소
 
 // 전역 상태
 let currentChannel = "all"; // 현재 선택된 채널
@@ -147,7 +147,7 @@ function connectWebSocket(agentId) {
   }
 
   console.log("🔌 WebSocket 연결 시작:", agentId);
-  ws = new WebSocket(`ws://localhost:8000/ws/agent/${agentId}`);
+  ws = new WebSocket(`wss://api.dreamwish.co.kr/ws/agent/${agentId}`);
 
   ws.onopen = () => {
     console.log("✅ WebSocket 연결 성공!");
