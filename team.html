@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팀원 관리 - DreamWish 대시보드</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .team-management {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin: 20px;
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .team-header h2 {
+            color: #333;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .invite-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .invite-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .team-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .team-table th {
+            background: #f8f9fa;
+            color: #555;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .team-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+        }
+
+        .team-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .role-agent {
+            background: #dfe6e9;
+            color: #2d3436;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .action-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #c0392b;
+        }
+
+        .action-btn.activate {
+            background: #27ae60;
+        }
+
+        .action-btn.activate:hover {
+            background: #229954;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-btn.secondary {
+            background: #e0e0e0;
+            color: #555;
+        }
+
+        .modal-btn.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .invite-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .invite-info h4 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .invite-link {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 사이드바 (기존 대시보드와 동일) -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🏢 DreamWish</h2>
+                <p>상담 대시보드</p>
+            </div>
+            <nav class="menu">
+                <a href="index.html" class="menu-item">
+                    <span class="icon">💬</span>
+                    <span>대화 목록</span>
+                </a>
+                <a href="team.html" class="menu-item active">
+                    <span class="icon">👥</span>
+                    <span>팀원 관리</span>
+                </a>
+                <a href="#" class="menu-item" onclick="handleLogout()">
+                    <span class="icon">🚪</span>
+                    <span>로그아웃</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main-content">
+            <div class="team-management">
+                <div id="alert-container"></div>
+
+                <div class="team-header">
+                    <h2>👥 팀원 관리</h2>
+                    <button class="invite-btn" onclick="openInviteModal()">
+                        ✉️ 팀원 초대하기
+                    </button>
+                </div>
+
+                <div id="loading" class="loading">
+                    <p>팀원 목록을 불러오는 중...</p>
+                </div>
+
+                <div id="team-list-container" class="hidden">
+                    <table class="team-table">
+                        <thead>
+                            <tr>
+                                <th>이름</th>
+                                <th>이메일</th>
+                                <th>역할</th>
+                                <th>상태</th>
+                                <th>가입일</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="team-list">
+                            <!-- 팀원 목록이 여기 렌더링됨 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="empty-state" class="empty-state hidden">
+                    <div class="empty-state-icon">👥</div>
+                    <h3>아직 팀원이 없습니다</h3>
+                    <p>팀원 초대하기 버튼을 눌러 첫 번째 팀원을 초대해보세요!</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 팀원 초대 모달 -->
+    <div id="invite-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">✉️ 팀원 초대하기</div>
+            
+            <div id="invite-alert-container"></div>
+
+            <div class="form-group">
+                <label for="invite-email">초대할 이메일 주소</label>
+                <input 
+                    type="email" 
+                    id="invite-email" 
+                    placeholder="example@email.com"
+                    required
+                >
+            </div>
+
+            <div id="invite-result" class="invite-info hidden">
+                <h4>📋 초대 링크</h4>
+                <div class="invite-link" id="invite-link-display"></div>
+                <button class="copy-btn" onclick="copyInviteLink()">
+                    📋 링크 복사
+                </button>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeInviteModal()">
+                    취소
+                </button>
+                <button class="modal-btn primary" id="send-invite-btn" onclick="sendInvite()">
+                    초대 링크 생성
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let currentInviteLink = '';
+
+        // 알림 표시
+        function showAlert(message, type = 'error', containerId = 'alert-container') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // 인증 토큰 가져오기
+        function getAuthToken() {
+            return localStorage.getItem('dw_token');  // 'access_token'이 아닌 'dw_token'
+        }
+
+        // 로그아웃
+        function handleLogout() {
+            localStorage.removeItem('dw_token');
+            localStorage.removeItem('dw_agent_id');
+            localStorage.removeItem('dw_role');
+            window.location.href = 'login.html';
+        }
+
+        // 팀원 목록 불러오기
+        async function loadTeamMembers() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const users = await response.json();
+                
+                document.getElementById('loading').classList.add('hidden');
+                
+                if (users.length === 0) {
+                    document.getElementById('empty-state').classList.remove('hidden');
+                } else {
+                    document.getElementById('team-list-container').classList.remove('hidden');
+                    renderTeamList(users);
+                }
+            } catch (error) {
+                console.error('Error loading team members:', error);
+                document.getElementById('loading').classList.add('hidden');
+                showAlert('팀원 목록을 불러오는데 실패했습니다.', 'error');
+            }
+        }
+
+        // 팀원 목록 렌더링
+        function renderTeamList(users) {
+            const tbody = document.getElementById('team-list');
+            const userRole = localStorage.getItem('dw_role');
+            const isAdmin = userRole === 'admin';
+            
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.name || '-'}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <span class="role-badge role-${user.role}">
+                            ${user.role === 'admin' ? '관리자' : '상담원'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-${user.is_active ? 'active' : 'inactive'}">
+                            ${user.is_active ? '활성' : '비활성'}
+                        </span>
+                    </td>
+                    <td>${formatDate(user.created_at)}</td>
+                    <td>
+                        ${isAdmin && user.role !== 'admin' ? `
+                            <button class="action-btn ${user.is_active ? '' : 'activate'}" 
+                                    onclick="toggleUserStatus(${user.id}, ${user.is_active})">
+                                ${user.is_active ? '비활성화' : '활성화'}
+                            </button>
+                        ` : '<span style="color: #999;">-</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 날짜 포맷팅
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        // 초대 모달 열기
+        function openInviteModal() {
+            document.getElementById('invite-modal').classList.add('active');
+            document.getElementById('invite-email').value = '';
+            document.getElementById('invite-result').classList.add('hidden');
+            document.getElementById('invite-alert-container').innerHTML = '';
+        }
+
+        // 초대 모달 닫기
+        function closeInviteModal() {
+            document.getElementById('invite-modal').classList.remove('active');
+        }
+
+        // 초대 링크 생성
+        async function sendInvite() {
+            const email = document.getElementById('invite-email').value.trim();
+            
+            if (!email) {
+                showAlert('이메일을 입력해주세요.', 'error', 'invite-alert-container');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showAlert('올바른 이메일 형식이 아닙니다.', 'error', 'invite-alert-container');
+                return;
+            }
+
+            const btn = document.getElementById('send-invite-btn');
+            btn.disabled = true;
+            btn.textContent = '생성 중...';
+
+            try {
+                const token = getAuthToken();
+                const response = await fetch(`${API_BASE}/auth/invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        expires_in_hours: 168  // 7일
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentInviteLink = data.invite_url;
+                    document.getElementById('invite-link-display').textContent = currentInviteLink;
+                    document.getElementById('invite-result').classList.remove('hidden');
+                    showAlert('초대 링크가 생성되었습니다!', 'success', 'invite-alert-container');
+                } else {
+                    showAlert(data.detail || '초대 링크 생성에 실패했습니다.', 'error', 'invite-alert-container');
+                }
+            } catch (error) {
+                console.error('Error creating invite:', error);
+                showAlert('서버 연결에 실패했습니다.', 'error', 'invite-alert-container');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '초대 링크 생성';
+            }
+        }
+
+        // 초대 링크 복사
+        function copyInviteLink() {
+            navigator.clipboard.writeText(currentInviteLink).then(() => {
+                showAlert('링크가 클립보드에 복사되었습니다!', 'success', 'invite-alert-container');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showAlert('복사에 실패했습니다.', 'error', 'invite-alert-container');
+            });
+        }
+
+        // 사용자 상태 토글 (활성화/비활성화)
+        async function toggleUserStatus(userId, currentStatus) {
+            const action = currentStatus ? '비활성화' : '활성화';
+            if (!confirm(`정말로 이 사용자를 ${action}하시겠습니까?`)) {
+                return;
+            }
+
+            try {
+                const token = getAuthToken();
+                const response = await fetch(`${API_BASE}/api/users/${userId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        is_active: !currentStatus
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert(`사용자가 ${action}되었습니다.`, 'success');
+                    loadTeamMembers();  // 목록 새로고침
+                } else {
+                    showAlert(`${action}에 실패했습니다.`, 'error');
+                }
+            } catch (error) {
+                console.error('Error toggling user status:', error);
+                showAlert('서버 연결에 실패했습니다.', 'error');
+            }
+        }
+
+        // 페이지 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            // 로그인 체크
+            const token = getAuthToken();
+            if (!token) {
+                alert('로그인이 필요합니다.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // 권한에 따라 UI 조정
+            const userRole = localStorage.getItem('dw_role');
+            if (userRole !== 'admin') {
+                // 관리자가 아니면 초대 버튼 숨김
+                const inviteBtn = document.querySelector('.invite-btn');
+                if (inviteBtn) {
+                    inviteBtn.style.display = 'none';
+                }
+                // 삭제/수정 버튼도 숨김 처리는 loadTeamMembers에서
+            }
+
+            loadTeamMembers();
+        });
+
+        // 모달 외부 클릭시 닫기
+        document.getElementById('invite-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'invite-modal') {
+                closeInviteModal();
+            }
+        });
+    </script>
+</body>
+</html>

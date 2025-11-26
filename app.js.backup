@@ -1,0 +1,425 @@
+﻿# backend/main.py
+"""
+?쒕┝?꾩떆 ?대땲梨꾨꼸 ?뚮옯??- 硫붿씤 ?쒕쾭
+"""
+
+from datetime import datetime
+import json
+import os
+from typing import Dict, Optional
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from .database import engine, SessionLocal
+from . import models
+from .models import Message, Channel, Conversation
+from .websocket import ConnectionManager
+from .routers import chat, channels, webhook, auth, users, conversations, customers, widget, reply, admin, knowledge_base_router, ai_chat
+
+load_dotenv()
+
+# DB ?뚯씠釉??앹꽦
+models.Base.metadata.create_all(bind=engine)
+
+# FastAPI ??
+app = FastAPI(
+    title="Dreamwish Omnichannel Platform",
+    description="?듯빀 怨좉컼 吏???뚮옯??,
+    version="1.0.0",
+)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# WebSocket ?곌껐 愿由ъ옄
+manager = ConnectionManager()
+
+# ?뵻 ?꾨줈?앺듃 猷⑦듃 湲곗??쇰줈 frontend ?대뜑 寃쎈줈 怨꾩궛
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+frontend_dir = os.path.join(BASE_DIR, "frontend")
+dashboard_dir = os.path.join(frontend_dir, "dashboard")
+widget_dir = os.path.join(frontend_dir, "widget")
+
+# ?뵻 ?뺤쟻 ?뚯씪 ?쒕튃
+app.mount("/dashboard", StaticFiles(directory=dashboard_dir, html=True), name="dashboard")
+app.mount("/widget", StaticFiles(directory=widget_dir, html=True), name="widget_files")
+app.mount("/frontend", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+
+# ?쇱슦??
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(customers.router)  # ??怨좉컼 愿由??쇱슦??異붽?
+app.include_router(conversations.router)  # ??異붽?
+app.include_router(chat.router)
+app.include_router(channels.router)
+app.include_router(webhook.router)
+app.include_router(widget.router)  # ???꾩젽 ?쇱슦??異붽?
+app.include_router(reply.router)  # ???듯빀 ?듭옣 ?쇱슦??
+app.include_router(admin.router)  # ??愿由ъ옄 ?꾩슜 ?쇱슦??
+app.include_router(knowledge_base_router.router)  # ??吏?앸쿋?댁뒪 愿由?
+app.include_router(ai_chat.router)  # ??AI 梨꾪똿 ?꾩슜 ?쇱슦??
+
+# ?덈줈 異붽????쇱슦??
+from .routers import upload, agent
+app.include_router(upload.router)  # ???뚯씪 ?낅줈??
+app.include_router(agent.router)  # ???곷떞??愿由?
+
+
+# DB ?섏〈??
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Pydantic 紐⑤뜽
+class MessageCreate(BaseModel):
+    conversation_id: int
+    sender_type: str  # customer, agent, bot
+    sender_id: Optional[int] = None
+    content: str
+    channel: str  # web, kakao, instagram, facebook, email
+
+
+class ChannelConnect(BaseModel):
+    channel_type: str
+    name: str = "湲곕낯 梨꾨꼸"
+    credentials: Dict[str, str]
+
+
+# 猷⑦듃 ?붾뱶?ъ씤??
+@app.get("/")
+async def root():
+    return {
+        "message": "Dreamwish Omnichannel Platform",
+        "version": "1.0.0",
+        "status": "running",
+    }
+
+
+# WebSocket ?붾뱶?ъ씤??- ?곷떞?먯슜
+@app.websocket("/ws/agent/{agent_id}")
+async def agent_websocket(websocket: WebSocket, agent_id: str):
+    """
+    ?곷떞????쒕낫?쒖슜 WebSocket
+    - 怨좉컼 硫붿떆吏 ?ㅼ떆媛??섏떊
+    - ?ㅻⅨ ?곷떞??硫붿떆吏 ?섏떊
+    """
+    await manager.connect(websocket, f"agent_{agent_id}")
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            
+            msg_type = message_data.get("type")
+            
+            if msg_type == "agent_reply":
+                # ?곷떞?먯씠 怨좉컼?먭쾶 ?듭옣
+                await handle_agent_reply(message_data, agent_id)
+            elif msg_type == "heartbeat":
+                # ?곷떞???묒냽 ?곹깭 ?좎?
+                pass
+
+    except WebSocketDisconnect:
+        manager.disconnect(f"agent_{agent_id}")
+
+
+# WebSocket ?붾뱶?ъ씤??- ?꾩젽??
+@app.websocket("/ws/widget/{customer_external_id}")
+async def widget_websocket(websocket: WebSocket, customer_external_id: str):
+    """
+    怨좉컼 ?꾩젽??WebSocket
+    - ?곷떞???듭옣 ?ㅼ떆媛??섏떊
+    """
+    await manager.connect(websocket, f"widget_{customer_external_id}")
+
+    try:
+        while True:
+            # ?꾩젽? REST API濡?硫붿떆吏 蹂대궡誘濡??ш린?쒕뒗 ?섏떊留?
+            data = await websocket.receive_text()
+            # ?꾩슂??泥섎━ (?묓릟 ??
+
+    except WebSocketDisconnect:
+        manager.disconnect(f"widget_{customer_external_id}")
+
+
+# ?곷떞???듭옣 泥섎━
+async def handle_agent_reply(message_data: dict, agent_id: str):
+    """
+    ?곷떞?먯씠 怨좉컼?먭쾶 ?듭옣
+    1. DB??硫붿떆吏 ???
+    2. ?대떦 怨좉컼???꾩젽 WebSocket?쇰줈 ?꾩넚
+    """
+    db = next(get_db())
+    
+    try:
+        conversation_id = message_data.get("conversation_id")
+        content = message_data.get("content")
+        
+        if not conversation_id or not content:
+            return
+        
+        # 硫붿떆吏 ???
+        new_message = Message(
+            conversation_id=int(conversation_id),
+            sender_type="agent",
+            sender_id=int(agent_id),
+            content=content,
+            channel="widget",
+        )
+        
+        db.add(new_message)
+        db.commit()
+        db.refresh(new_message)
+        
+        # ??붾갑 ?뺣낫 議고쉶
+        conversation = db.query(Conversation).filter(
+            Conversation.id == conversation_id
+        ).first()
+        
+        if conversation and conversation.customer_id:  # type: ignore[attr-defined]
+            # Customer 議고쉶
+            customer = db.query(models.Customer).filter(
+                models.Customer.id == conversation.customer_id  # type: ignore[attr-defined]
+            ).first()
+            
+            if customer:
+                # ?대떦 怨좉컼???꾩젽 WebSocket?쇰줈 ?꾩넚
+                widget_client_id = f"widget_{customer.external_id}"  # type: ignore[attr-defined]
+                await manager.send_personal_message(
+                    json.dumps({
+                        "type": "agent_reply",
+                        "message": {
+                            "id": new_message.id,  # type: ignore[attr-defined]
+                            "conversation_id": conversation_id,
+                            "sender_type": "agent",
+                            "content": content,
+                            "created_at": new_message.created_at.isoformat()  # type: ignore[attr-defined]
+                        }
+                    }),
+                    widget_client_id
+                )
+        
+        # ?ㅻⅨ ?곷떞?먮뱾?먭쾶???뚮┝ (?듭뀡)
+        await manager.broadcast_to_agents(json.dumps({
+            "type": "conversation_updated",
+            "conversation_id": conversation_id
+        }))
+        
+    except Exception as e:
+        print(f"Error handling agent reply: {e}")
+    finally:
+        db.close()
+
+
+# 硫붿떆吏 ???+ AI ?묐떟
+async def process_message(message_data: dict, client_id: str):
+    """硫붿떆吏 DB ???+ ?꾩슂??遊??묐떟"""
+    db = next(get_db())
+
+    try:
+        content: str = (message_data.get("content") or "").strip()
+        if not content:
+            return
+
+        conversation_id = message_data.get("conversation_id")
+
+        # ???ID ?놁쑝硫??덈줈 ?앹꽦
+        if conversation_id is None:
+            conv = Conversation(
+                customer_id=client_id,
+                channel_type=message_data.get("channel", "web"),
+                status="open",
+            )
+            db.add(conv)
+            db.commit()
+            db.refresh(conv)
+            conversation_id = conv.id
+        else:
+            conversation_id = int(conversation_id)
+
+        sender_type = message_data.get("sender_type", "customer")
+        channel = message_data.get("channel", "web")
+
+        new_message = Message(
+            conversation_id=conversation_id,
+            sender_type=sender_type,
+            sender_id=None,  # WebSocket?먯꽌??臾몄옄??client_id??None 泥섎━
+            content=content,
+            channel=channel,
+        )
+
+        db.add(new_message)
+        db.commit()
+        db.refresh(new_message)
+
+        # AI 梨쀫큸 ?먮룞 ?묐떟 (?듭뀡)
+        if message_data.get("enable_bot"):
+            bot_response = await get_bot_response(content)
+
+            bot_message = Message(
+                conversation_id=conversation_id,
+                sender_type="bot",
+                sender_id=None,
+                content=bot_response,
+                channel=channel,
+            )
+            db.add(bot_message)
+            db.commit()
+            db.refresh(bot_message)
+
+            # datetime ?몄뒪?댁뒪?몄? ?뺤씤 ??timestamp ?앹꽦 (Pylance ?먮윭 諛⑹?)
+            created = bot_message.created_at
+            bot_ts = created.isoformat() if isinstance(created, datetime) else None
+
+            await manager.send_personal_message(
+                json.dumps(
+                    {
+                        "type": "bot_response",
+                        "message": {
+                            "conversation_id": conversation_id,
+                            "sender_type": "bot",
+                            "content": bot_response,
+                            "channel": channel,
+                            "timestamp": bot_ts,
+                        },
+                    }
+                ),
+                client_id,
+            )
+
+    except Exception as e:
+        print(f"Error processing message: {e}")
+    finally:
+        db.close()
+
+
+async def get_bot_response(message: str) -> str:
+    """AI 梨쀫큸 ?묐떟 ?앹꽦 (services.chatbot.generate_response ?ъ슜)"""
+    try:
+        from .services.chatbot import generate_response
+
+        response = await generate_response(message)
+        return response
+    except Exception:
+        return "二꾩넚?⑸땲?? ?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂."
+
+
+# 硫붿떆吏 ?꾩넚 API (REST)
+@app.post("/api/messages/send")
+async def send_message(message: MessageCreate, db: Session = Depends(get_db)):
+    """REST API濡?硫붿떆吏 ?꾩넚 (紐⑤뱺 梨꾨꼸 ?듯빀)"""
+    try:
+        new_message = Message(
+            conversation_id=message.conversation_id,
+            sender_type=message.sender_type,
+            sender_id=message.sender_id,
+            content=message.content,
+            channel=message.channel,
+        )
+
+        db.add(new_message)
+        db.commit()
+        db.refresh(new_message)
+
+        created = new_message.created_at
+        ts = created.isoformat() if isinstance(created, datetime) else None
+
+        # WebSocket?쇰줈??肉뚮젮二쇨린
+        await manager.broadcast(
+            json.dumps(
+                {
+                    "type": "new_message",
+                    "message": {
+                        "id": new_message.id,
+                        "conversation_id": new_message.conversation_id,
+                        "sender_type": new_message.sender_type,
+                        "content": new_message.content,
+                        "channel": new_message.channel,
+                        "timestamp": ts,
+                    },
+                }
+            )
+        )
+
+        return {"status": "success", "message_id": new_message.id}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ????댁뿭 議고쉶
+@app.get("/api/conversations/{conversation_id}/messages")
+async def get_conversation_messages(
+    conversation_id: int, db: Session = Depends(get_db)
+):
+    """????댁뿭 議고쉶"""
+    messages = (
+        db.query(Message)
+        .filter(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at)
+        .all()
+    )
+
+    result = []
+    for msg in messages:
+        created = msg.created_at
+        ts = created.isoformat() if isinstance(created, datetime) else None
+
+        result.append(
+            {
+                "id": msg.id,
+                "sender_type": msg.sender_type,
+                "content": msg.content,
+                "channel": msg.channel,
+                "timestamp": ts,
+            }
+        )
+
+    return {
+        "conversation_id": conversation_id,
+        "messages": result,
+    }
+
+
+# 梨꾨꼸 ?곕룞
+@app.post("/api/channels/connect")
+async def connect_channel(channel: ChannelConnect, db: Session = Depends(get_db)):
+    """?몃? 梨꾨꼸 ?곕룞"""
+    try:
+        new_channel = Channel(
+            type=channel.channel_type,
+            name=channel.name,
+            config_json=json.dumps(channel.credentials),
+            is_active=True,
+        )
+
+        db.add(new_channel)
+        db.commit()
+        db.refresh(new_channel)
+
+        return {"status": "success", "channel": channel.channel_type}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+

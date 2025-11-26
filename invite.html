@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팀원 초대 - DreamWish 상담 대시보드</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .alert {
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .invite-result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+            display: none;
+        }
+
+        .invite-result.show {
+            display: block;
+        }
+
+        .invite-result h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .invite-result p {
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .invite-url {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 15px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .copy-btn {
+            width: auto;
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #28a745;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .copy-btn.copied {
+            background: #6c757d;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👥 팀원 초대</h1>
+            <p>새로운 팀원을 초대하세요</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="info-box">
+            💡 <strong>안내:</strong> 초대받은 사람만 회원가입할 수 있습니다. 초대 링크는 기본 7일간 유효하며, 1회만 사용 가능합니다.
+        </div>
+
+        <form id="invite-form">
+            <div class="form-group">
+                <label for="email">초대할 이메일 주소 *</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    placeholder="teammate@example.com"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="expires">초대 링크 유효 기간</label>
+                <select id="expires" name="expires">
+                    <option value="24">24시간</option>
+                    <option value="72">3일</option>
+                    <option value="168" selected>7일 (기본)</option>
+                    <option value="336">14일</option>
+                    <option value="720">30일</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">
+                초대 링크 생성
+            </button>
+        </form>
+
+        <div class="invite-result" id="invite-result">
+            <h3>✅ 초대 링크가 생성되었습니다!</h3>
+            <p>
+                아래 링크를 복사하여 팀원에게 전달하세요:
+            </p>
+            <div class="invite-url" id="invite-url"></div>
+            <button class="btn copy-btn" id="copy-btn" onclick="copyInviteUrl()">
+                📋 링크 복사하기
+            </button>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html">← 대시보드로 돌아가기</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        // 알림 표시
+        function showAlert(message, type = 'error') {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // 초대 링크 생성
+        async function handleInvite(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const expires = parseInt(document.getElementById('expires').value);
+            
+            if (!email) {
+                showAlert('이메일을 입력해주세요.', 'error');
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '생성 중...';
+            
+            try {
+                const token = localStorage.getItem('dw_token');
+                if (!token) {
+                    showAlert('로그인이 필요합니다.', 'error');
+                    setTimeout(() => window.location.href = 'login.html', 1500);
+                    return;
+                }
+                
+                const response = await fetch(`${API_BASE}/auth/invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        expires_in_hours: expires
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // 초대 링크 표시
+                    document.getElementById('invite-url').textContent = data.invite_url;
+                    document.getElementById('invite-result').classList.add('show');
+                    
+                    showAlert(`${email}에 대한 초대 링크가 생성되었습니다!`, 'success');
+                    
+                    // 폼 초기화
+                    document.getElementById('invite-form').reset();
+                } else {
+                    if (response.status === 401 || response.status === 403) {
+                        showAlert('관리자 권한이 필요합니다.', 'error');
+                    } else {
+                        showAlert(data.detail || '초대 링크 생성에 실패했습니다.', 'error');
+                    }
+                }
+            } catch (error) {
+                showAlert('서버 연결에 실패했습니다.', 'error');
+                console.error('Error:', error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '초대 링크 생성';
+            }
+        }
+
+        // 초대 URL 복사
+        function copyInviteUrl() {
+            const inviteUrl = document.getElementById('invite-url').textContent;
+            
+            navigator.clipboard.writeText(inviteUrl).then(() => {
+                const copyBtn = document.getElementById('copy-btn');
+                copyBtn.textContent = '✅ 복사 완료!';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 링크 복사하기';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                showAlert('복사에 실패했습니다. 수동으로 복사해주세요.', 'error');
+                console.error('Copy failed:', err);
+            });
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            // 로그인 확인
+            const token = localStorage.getItem('dw_token');
+            if (!token) {
+                showAlert('로그인이 필요합니다. 로그인 페이지로 이동합니다...', 'error');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+            
+            // 폼 제출 이벤트
+            document.getElementById('invite-form').addEventListener('submit', handleInvite);
+        });
+    </script>
+</body>
+</html>
